@@ -89,10 +89,6 @@ class UIScene extends Phaser.Scene {
         super('UIScene');
     }
 
-    preload() {
-        this.load.spritesheet('selectArrow', './assets/selectArrow.png', {frameWidth: 24, frameHeight: 20, startFrame: 0, endFrame: 1});
-    }
-
     create() {
         this.graphics = this.add.graphics();
         this.graphics.lineStyle(1, 0xffffff);
@@ -116,28 +112,16 @@ class UIScene extends Phaser.Scene {
         this.menus.add(this.actionsMenu);
         this.menus.add(this.enemiesMenu);
 
-        // Animation config
-        this.anims.create({
-            key: 'select',
-            frames: this.anims.generateFrameNumbers('selectArrow', { start: 0, end: 1, first: 0}),
-            frameRate: 2.5,
-            repeat: -1
-        })
-
         this.battleScene = this.scene.get('stationBattleScene');
 
         this.remapCharacters();
         this.remapEnemies();
 
-        this.selector = new MenuArrow(this, 60, 160, 'selectArrow', 0);
-        this.selector.anims.play('select');
-        this.selector.setVisible(false);
-
         this.input.keyboard.on('keydown', this.onKeyInput, this);
 
         this.battleScene.events.on("PlayerSelect", this.onPlayerSelect, this);
 
-        this.events.on("SelectEnemies", this.onSelectEnemies,  this);
+        this.events.on("SelectEnemies", this.onSelectEnemies, this);
 
         this.events.on("Enemy", this.onEnemy, this);
 
@@ -156,7 +140,6 @@ class UIScene extends Phaser.Scene {
         this.actionsMenu.deselect();
         this.enemiesMenu.deselect();
         this.currentMenu = null;
-        this.selector.setVisible(false);
     }
 
     commitThink() {
@@ -169,8 +152,7 @@ class UIScene extends Phaser.Scene {
 
     onSelectEnemies() {
         this.currentMenu = this.enemiesMenu;
-        this.enemiesMenu.select(0)
-        this.selector.setVisible(true);
+        this.enemiesMenu.select(0);
     }
 
     onPlayerSelect(id) {
@@ -182,7 +164,7 @@ class UIScene extends Phaser.Scene {
     onKeyInput(event) {
         if(this.currentMenu) {
             if(event.code === 'ArrowUp') {
-                this.currentMenu.moveSelectorUp()
+                this.currentMenu.moveSelectorUp();
             } 
             else if(event.code === 'ArrowDown') {
                 this.currentMenu.moveSelectorDown();

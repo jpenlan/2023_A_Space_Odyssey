@@ -9,20 +9,7 @@ class UserMenu extends Phaser.GameObjects.Container {
         this.x = x;
         this.y = y;
     }
-
-    preload() {
-        this.load.spritesheet('selectAnim', './assets/selectArrow.png', {frameWidth: 24, frameHeight: 20, startFrame: 0, endFrame: 1});
-    }
-
-    create() {
-        // Animation config
-        this.anims.create({
-            key: 'select',
-            frames: this.anims.generateFrameNumbers('selectAnim', { start: 0, end: 2, first: 0}),
-            frameRate: 1
-        })
-    }
-
+    
     // Pushes a menu item onto the stack (items)
     addMenuItem(unit) {
         this.menuItem = new MenuItem(this.scene, 0, this.menuItems.length * 20, unit);
