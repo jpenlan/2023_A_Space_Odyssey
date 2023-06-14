@@ -13,7 +13,7 @@ class EndScene extends Phaser.Scene {
         this.cameras.main.fadeIn(1000,10,20,30);
         this.bg1 = this.add.tileSprite(0, 0, 320, 240, 'starEnd').setOrigin(0, 0);
         this.time.delayedCall(5000, () =>{
-            this.sound.pause('intro');
+            this.sound.stop('intro');
             this.scene.start('MenuScene');
         });
         
