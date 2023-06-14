@@ -8,11 +8,14 @@ class StationBattle extends Phaser.Scene{
         this.load.image('HAL', 'assets/HAL-9000.png');
         this.load.image('HAL_background1', './assets/HAL_background.png');
         this.load.image('HAL_background2', './assets/HAL_background2.png');
+        this.load.audio('select', './assets/select.mp3');
+        this.load.audio('hit', './assets/hit.mp3');
     }
 
     create() {
         this.sound.play('music', { volume: 0.3, repeat: -1});
         this.cameras.main.setBackgroundColor('rgba(0, 0, 0, 0.5)');
+        this.cameras.main.fadeIn(1000,10,20,30);
         // Add background
         this.bg1 = this.add.tileSprite(0, 0, 320, 240, 'HAL_background2').setOrigin(0, 0);
         this.bg2 = this.add.tileSprite(0, 0, 320, 240, 'HAL_background1').setOrigin(0, 0);
@@ -23,18 +26,19 @@ class StationBattle extends Phaser.Scene{
         this.david = new PlayerCharacter(this, -100, -100, null, 0, 'David', 25, 5);
         this.frank = new PlayerCharacter(this, -100, -100, null, 0, 'Frank', 25, 5);
 
+        this.actions = [ 'Question', 'Think' ];
         this.characters = [ this.david, this.frank ];
         this.enemies = [ this.hal9000 ];
 
         this.units = this.characters.concat(this.enemies);
 
-        this.scene.launch('UIScene');
+        this.scene.launch('UIScene2');
 
         this.action = 0;
 
         this.index = -1;
 
-        this.uiScene = this.scene.get('UIScene');
+        this.uiScene = this.scene.get('UIScene2');
 
     }
 
@@ -42,6 +46,30 @@ class StationBattle extends Phaser.Scene{
         this.bg1.tilePositionX -= 2;
         this.bg2.tilePositionX -= 3;
         this.bg3.tilePositionX -= 4;
+
+        if (this.hal9000.hp <= 0) {
+            this.time.delayedCall(1200, () =>{
+                this.cameras.main.fadeOut(1000,10,20,30);
+            });
+            this.time.delayedCall(2400, () =>{
+                this.sound.pauseAll();
+                this.scene.start('Intermission2Scene');
+                this.uiScene.scene.setVisible(false);
+                this.scene.destroy('UIScene2');
+            });
+        }
+
+        if (this.david.hp <= 0) {
+            this.time.delayedCall(1200, () =>{
+                this.cameras.main.fadeOut(1000,10,20,30);
+            });
+            this.time.delayedCall(2400, () =>{
+                this.sound.pauseAll();
+                this.scene.start('Menu');
+                this.uiScene.scene.setVisible(false);
+                this.scene.destroy('UIScene2');
+            });
+        }
     }
 
     nextTurn() {
@@ -58,12 +86,18 @@ class StationBattle extends Phaser.Scene{
                     this.units[this.index].ELIMINATE(this.characters[1]);
                     this.characters.splice(1, 1);
                     this.units.splice(1, 1);
+                    this.cameras.main.shake(700)
+                    this.sound.play('hit', { volume: 0.9 });
                     this.uiScene.remapCharacters();
                     this.uiScene.remapEnemies();
                     this.time.addEvent({ delay: 2000, callback: this.nextTurn, callbackScope: this});
                 } else {
                     this.r = Math.floor(Math.random() * this.characters.length);
-                    this.units[this.index].attack(this.characters[this.r]);
+                    this.units[this.index].question(this.characters[this.r]);
+                    this.cameras.main.shake(500)
+                    this.sound.play('hit', { volume: 0.9 });
+                    this.uiScene.remapCharacters();
+                    this.uiScene.remapEnemies();
                     this.time.addEvent({ delay: 2000, callback: this.nextTurn, callbackScope: this});
                 }
             }
@@ -75,18 +109,24 @@ class StationBattle extends Phaser.Scene{
 
     receivePlayerSelection(action, target) {
         if(action == 'question') {
-            this.units[this.index].attack(this.enemies[target]);
+            this.units[this.index].question(this.enemies[target]);
+            this.cameras.main.flash();
+            this.sound.play('hit', { volume: 0.9 });
+            this.uiScene.remapCharacters();
+            this.uiScene.remapEnemies();
         }
         if(action == 'think') {
             this.units[this.index].think();
+            this.uiScene.remapCharacters();
+            this.uiScene.remapEnemies();
         }
         this.time.addEvent({ delay: 3000, callback: this.nextTurn, callbackScope: this});
     }
 }
 
-class UIScene extends Phaser.Scene {
+class UIScene2 extends Phaser.Scene {
     constructor() {
-        super('UIScene');
+        super('UIScene2');
     }
 
     preload() {
@@ -110,8 +150,6 @@ class UIScene extends Phaser.Scene {
         this.actionsMenu = new ActionMenu(this, 100, 153);
         this.enemiesMenu = new EnemyMenu(this, 8, 153);
 
-        this.currentMenu = this.actionsMenu;
-
         this.menus.add(this.charactersMenu);
         this.menus.add(this.actionsMenu);
         this.menus.add(this.enemiesMenu);
@@ -128,8 +166,11 @@ class UIScene extends Phaser.Scene {
 
         this.remapCharacters();
         this.remapEnemies();
+        this.remapActions();
 
-        this.selector = new MenuArrow(this, 60, 160, 'selectArrow', 0);
+        this.currentMenu = this.actionsMenu;
+
+        this.selector = new MenuArrow(this, 70, 160, 'selectArrow', 0).setScale(0.4);
         this.selector.anims.play('select');
         this.selector.setVisible(false);
 
@@ -147,6 +188,8 @@ class UIScene extends Phaser.Scene {
         this.add.existing(this.message);
 
         this.battleScene.nextTurn();
+
+
     }
 
     onEnemy(index) {
@@ -192,6 +235,7 @@ class UIScene extends Phaser.Scene {
             }
             else if(event.code === 'Space') {
                 this.currentMenu.confirm();
+                this.sound.play('select', { volume: 0.5 });
             }
         }
     }
@@ -203,6 +247,11 @@ class UIScene extends Phaser.Scene {
 
     remapEnemies() {
         this.enemies = this.battleScene.enemies;
-        this.enemiesMenu.remap(this.enemies);
+        this.enemiesMenu.remapEnemScene3(this.enemies);
+    }
+
+    remapActions() {
+        this.actions = this.battleScene.actions;
+        this.actionsMenu.remapAction(this.actions);
     }
 }

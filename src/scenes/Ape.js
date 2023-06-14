@@ -1,60 +1,66 @@
-class ObeliskBattle extends Phaser.Scene{
+class ApeBattle extends Phaser.Scene{
     constructor() {
-        super('obeliskScene');
+        super('apeScene');
     }
 
     preload() {
         this.load.audio('music', './assets/ominous.mp3');
-        this.load.image('obelisk', 'assets/obelisk.png');
-        this.load.image('warp1', './assets/warp_BG1.png');
-        this.load.image('warp2', './assets/warp_BG2.png');
+        this.load.image('ape', 'assets/ape.png');
+        this.load.image('desert', './assets/desertBG.png');
+        this.load.image('desert2', './assets/desertBG2.png');
         this.load.audio('select', './assets/select.mp3');
         this.load.audio('hit', './assets/hit.mp3');
     }
 
     create() {
         this.sound.play('music', { volume: 0.3, repeat: -1});
-        this.cameras.main.setBackgroundColor('rgba(0, 0, 0, 0.5)');
+        this.cameras.main.setBackgroundColor('#a95e2c');
         this.cameras.main.fadeIn(1000,10,20,30);
         // Add background
-        this.bg1 = this.add.tileSprite(0, 0, 320, 240, 'warp1').setOrigin(0, 0);
-        this.bg2 = this.add.tileSprite(0, -5, 320, 240, 'warp2').setOrigin(0, 0);
-        this.bg3 = this.add.tileSprite(0, -10, 320, 240, 'warp1').setOrigin(0, 0).setAlpha(0.5);
+        this.bg1 = this.add.tileSprite(0, 0, 320, 240, 'desert').setOrigin(0, 0);
+        this.bg2 = this.add.tileSprite(0, 15, 320, 240, 'desert2').setOrigin(0, 0).setAlpha(0.7);
+        this.bg3 = this.add.tileSprite(0, -10, 320, 240, 'desert').setOrigin(0, 0).setAlpha(0.5);
+
 
         // Instantiate characters in scene 2
-        this.obelisk = new Enemy(this, game.config.width / 2, 75, 'obelisk', 0, 'Obelisk', 999, 5).setScale(0.7);
-        this.david = new PlayerCharacter(this, -100, -100, null, 0, 'David', 31, 3);
+        this.ApeE1 = new Enemy(this, 60, 75, 'ape', 0, 'Ape', 20, 10).setScale(0.5);
+        this.ApeE2 = new Enemy(this, game.config.width / 2, 75, 'ape', 0, 'Ape', 20, 10).setScale(0.7);
+        this.ApeE3 = new Enemy(this, game.config.width - 60, 75, 'ape', 0, 'Ape', 20, 10).setScale(0.5);
+        this.ApeP1 = new PlayerCharacter(this, -100, -100, null, 0, 'Ape', 25, 5);
+        this.ApeP2 = new PlayerCharacter(this, -100, -100, null, 0, 'Ape', 25, 5);
+        this.ApeP3 = new PlayerCharacter(this, -100, -100, null, 0, 'Ape', 25, 5);
 
-        this.actions = [ 'Resist', 'Gaze', 'Blink' ];
-        this.characters = [ this.david ];
-        this.enemies = [ this.obelisk ];
+        this.actions = [ 'Attack', 'Intimidate', 'Rally' ];
+        this.characters = [ this.ApeP1, this.ApeP2, this.ApeP3 ];
+        this.enemies = [ this.ApeE1, this.ApeE2, this.ApeE3 ];
 
         this.units = this.characters.concat(this.enemies);
 
-        this.scene.launch('UIScene3');
+        this.scene.launch('UIScene1');
 
         this.action = 0;
 
         this.index = -1;
 
-        this.uiScene = this.scene.get('UIScene3');
+        this.uiScene = this.scene.get('UIScene1');
 
     }
 
     update() {
-        this.bg1.tilePositionX -= 5;
-        this.bg2.tilePositionX -= 7;
-        this.bg3.tilePositionX -= 8;
+        this.bg1.tilePositionX -= 2;
+        this.bg2.tilePositionX -= 4;
+        this.bg3.tilePositionX -= 6;
 
-        if (this.david.hp >= 150) {
+
+        if (this.ApeE3.hp <= 0 && this.ApeE2.hp <= 0 && this.ApeE1.hp <= 0) {
             this.time.delayedCall(1200, () =>{
                 this.cameras.main.fadeOut(1000,10,20,30);
             });
             this.time.delayedCall(2400, () =>{
                 this.sound.pauseAll();
-                this.scene.start('EndScene');
+                this.scene.start('Intermission1Scene');
                 this.uiScene.scene.setVisible(false);
-                this.scene.destroy('UIScene3');
+                this.scene.destroy('UIScene1');
             });
         }
     }
@@ -70,7 +76,7 @@ class ObeliskBattle extends Phaser.Scene{
                 this.events.emit('PlayerSelect', this.index);
             } else {
                     this.r = Math.floor(Math.random() * this.characters.length);
-                    this.units[this.index].resist(this.characters[this.r]);
+                    this.units[this.index].attack(this.characters[this.r]);
                     this.cameras.main.shake(500)
                     this.sound.play('hit', { volume: 0.9 });
                     this.uiScene.remapCharacters();
@@ -84,20 +90,33 @@ class ObeliskBattle extends Phaser.Scene{
     }
 
     receivePlayerSelection(action, target) {
-        if(action == 'resist') {
-            this.units[this.index].resist(this.enemies[target]);
-            this.cameras.main.flash();
+        if(action == 'attack') {
+            this.units[this.index].attack(this.enemies[target]);
             this.sound.play('hit', { volume: 0.9 });
+            if (this.enemies[target].hp <= 0) {
+                this.cameras.main.flash();
+                console.log(target);
+                this.enemies.splice(target, 1);
+                this.units = this.characters.concat(this.enemies);
+            }
             this.uiScene.remapCharacters();
             this.uiScene.remapEnemies();
         }
-        if(action == 'gaze') {
-            this.units[this.index].gaze(this.enemies[0]);
+        if(action == 'intimidate') {
+            if (this.enemies.length == 3) {
+                this.units[this.index].intimidate(this.enemies[0], this.enemies[1], this.enemies[2]);
+            }
+            else if (this.enemies.length == 2) {
+                this.units[this.index].intimidate(this.enemies[0], this.enemies[1], null);
+            }
+            else if (this.enemies.length == 1) {
+                this.units[this.index].intimidate(this.enemies[0], null, null);
+            }
             this.uiScene.remapCharacters();
             this.uiScene.remapEnemies();
         }
-        if(action == 'blink') {
-            this.units[this.index].blink(this.enemies[0]);
+        if(action == 'rally') {
+            this.units[this.index].rally(this.characters[0], this.characters[1], this.characters[2]);
             this.uiScene.remapCharacters();
             this.uiScene.remapEnemies();
         }
@@ -105,9 +124,9 @@ class ObeliskBattle extends Phaser.Scene{
     }
 }
 
-class UIScene3 extends Phaser.Scene {
+class UIScene1 extends Phaser.Scene {
     constructor() {
-        super('UIScene3');
+        super('UIScene1');
     }
 
     preload() {
@@ -145,15 +164,16 @@ class UIScene3 extends Phaser.Scene {
         this.menus.add(this.actionsMenu);
         this.menus.add(this.enemiesMenu);
 
-        this.battleScene = this.scene.get('obeliskScene');
-
-        this.selector = new MenuArrow(this, 70, 160, 'selectArrow', 0).setScale(0.4);
-        this.selector.anims.play('select');
-        this.selector.setVisible(false);
+        this.battleScene = this.scene.get('apeScene');
 
         this.remapCharacters();
         this.remapEnemies();
         this.remapActions();
+
+        this.selector = new MenuArrow(this, 86, 160, 'selectArrow', 0).setScale(0.35);
+        this.selector.anims.play('select');
+        this.selector.setVisible(false);
+
 
         this.input.keyboard.on('keydown', this.onKeyInput, this);
 
@@ -163,9 +183,9 @@ class UIScene3 extends Phaser.Scene {
 
         this.events.on("Enemy", this.onEnemy, this);
 
-        this.events.on("commitGaze", this.commitGaze, this);
+        this.events.on("commitIntimidate", this.commitIntimidate, this);
 
-        this.events.on("commitBlink", this.commitBlink, this);
+        this.events.on("commitRally", this.commitRally, this);
 
         this.message = new Message(this, this.battleScene.events);
         this.add.existing(this.message);
@@ -174,24 +194,24 @@ class UIScene3 extends Phaser.Scene {
     }
 
     onEnemy(index) {
-        this.battleScene.receivePlayerSelection('resist', index);
         this.charactersMenu.deselect();
         this.actionsMenu.deselect();
         this.enemiesMenu.deselect();
+        this.battleScene.receivePlayerSelection('attack', index);
         this.currentMenu = null;
         this.selector.setVisible(false);
     }
 
-    commitGaze() {
-        this.battleScene.receivePlayerSelection('gaze', );
+    commitIntimidate() {
+        this.battleScene.receivePlayerSelection('intimidate');
         this.charactersMenu.deselect();
         this.actionsMenu.deselect();
         this.enemiesMenu.deselect();
         this.currentMenu = null;
     }
 
-    commitBlink() {
-        this.battleScene.receivePlayerSelection('blink', null);
+    commitRally() {
+        this.battleScene.receivePlayerSelection('rally', null);
         this.charactersMenu.deselect();
         this.actionsMenu.deselect();
         this.enemiesMenu.deselect();
@@ -201,6 +221,7 @@ class UIScene3 extends Phaser.Scene {
     onSelectEnemies() {
         this.currentMenu = this.enemiesMenu;
         this.enemiesMenu.select(0);
+        this.selector.y = 160;
         this.selector.setVisible(true);
     }
 
@@ -214,9 +235,33 @@ class UIScene3 extends Phaser.Scene {
         if(this.currentMenu) {
             if(event.code === 'ArrowUp') {
                 this.currentMenu.moveSelectorUp();
+                if (this.selector.y == 160 && this.enemies.length == 3) {
+                    this.selector.y = 200;
+                }
+                else if (this.selector.y == 160 && this.enemies.length == 2) {
+                    this.selector.y = 180;
+                }
+                else if (this.selector.y == 160 && this.enemies.length == 1) {
+                    this.selector.y = 160;
+                }
+                else {
+                    this.selector.y -= 20;
+                }
             } 
             else if(event.code === 'ArrowDown') {
                 this.currentMenu.moveSelectorDown();
+                if (this.selector.y == 200 && this.enemies.length == 3) {
+                    this.selector.y = 160;
+                }
+                else if (this.selector.y == 180 && this.enemies.length == 2) {
+                    this.selector.y = 160;
+                }
+                else if (this.selector.y == 160 && this.enemies.length == 1) {
+                    this.selector.y = 160;
+                }
+                else {
+                    this.selector.y += 20;
+                }
             }
             else if(event.code === 'ArrowRight' || event.code === 'Shift') {
                  
@@ -230,12 +275,12 @@ class UIScene3 extends Phaser.Scene {
 
     remapCharacters() {
         this.characters = this.battleScene.characters;
-        this.charactersMenu.remapCharScene3(this.characters);
+        this.charactersMenu.remap(this.characters);
     }
 
     remapEnemies() {
         this.enemies = this.battleScene.enemies;
-        this.enemiesMenu.remapEnemScene3(this.enemies);
+        this.enemiesMenu.remap(this.enemies);
     }
 
     remapActions() {

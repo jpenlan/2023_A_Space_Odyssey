@@ -12,7 +12,7 @@ let config = {
         }
     },
     zoom: 2,
-    scene: [ Menu, HAL, StationBattle, UIScene ]
+    scene: [ Menu, ApeBattle, UIScene1, StationBattle, UIScene2, ObeliskBattle, UIScene3, Intermission1, Intermission2, EndScene ]
 }
 
 const game = new Phaser.Game(config);

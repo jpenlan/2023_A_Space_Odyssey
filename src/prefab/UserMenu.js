@@ -8,6 +8,7 @@ class UserMenu extends Phaser.GameObjects.Container {
         this.characters = characters;
         this.x = x;
         this.y = y;
+        this.confirmItem = 0;
     }
     
     // Pushes a menu item onto the stack (items)
@@ -69,7 +70,7 @@ class UserMenu extends Phaser.GameObjects.Container {
         this.clear();
         for(var i = 0; i < units.length; i++) {
             this.unit = units[i];
-            this.addMenuItem(this.unit.type);
+            this.addMenuItem(this.unit.type + " | HP: " + this.unit.hp);
         }
     }
 
@@ -80,25 +81,66 @@ class PlayerMenu extends UserMenu {
     constructor(scene, x, y) {
         super(scene, x, y);
     }
+
+    remapCharScene3(units) {
+        this.clear();
+        for(var i = 0; i < units.length; i++) {
+            this.unit = units[i];
+            this.addMenuItem(this.unit.type + " | Age: " + this.unit.hp);
+        }
+    }
 }
 
 // Menu class for the player actions
 class ActionMenu extends UserMenu {
     constructor(scene, x, y) {
         super(scene, x, y);
-        this.addMenuItem('Question');
-        this.addMenuItem('Think');
+
+    }
+
+    remapAction(actions) {
+        this.clear();
+        for(var i = 0; i < actions.length; i++) {
+            this.action = actions[i];
+            this.addMenuItem(this.action);
+        }
     }
 
     confirm() {
         console.log(this.menuItemIndex);
-        if (this.menuItemIndex == 0) {
+        console.log(this.menuItems[1].text);
+
+        if (this.menuItems[this.menuItemIndex].text == 'Attack') { // Scene 1
             console.log('1');
             this.scene.events.emit("SelectEnemies", this.menuItemIndex);
         }
-        else if (this.menuItemIndex == 1) {
-            console.log('2');
+        else if (this.menuItems[this.menuItemIndex].text == 'Intimidate') { // Scene 1
+            console.log('4');
+            this.scene.events.emit("commitIntimidate", this.menuItemIndex);
+        }
+        else if (this.menuItems[this.menuItemIndex].text == 'Rally') { // Scene 1
+            console.log('4');
+            this.scene.events.emit("commitRally", this.menuItemIndex);
+        }
+
+        if (this.menuItems[this.menuItemIndex].text == 'Question') { // Scene 2
+            console.log('1');
+            this.scene.events.emit("SelectEnemies", this.menuItemIndex);
+        }
+        else if (this.menuItems[this.menuItemIndex].text == 'Think') { // Scene 2
+            console.log('4');
             this.scene.events.emit("commitThink", this.menuItemIndex);
+        }
+
+        else if (this.menuItems[this.menuItemIndex].text == 'Resist') { // Scene 3
+            this.scene.events.emit("SelectEnemies", this.menuItemIndex);
+        }
+        else if (this.menuItems[this.menuItemIndex].text == 'Gaze') { // Scene 3
+            console.log('2');
+            this.scene.events.emit("commitGaze", this.menuItemIndex);
+        }
+        else if (this.menuItems[this.menuItemIndex].text == 'Blink') { // Scene 3
+            this.scene.events.emit("commitBlink", this.menuItemIndex);
         }
     }
 }
@@ -110,16 +152,15 @@ class EnemyMenu extends UserMenu {
         super(scene, x, y);
     }
 
-    select(index) {
-        if(!index) {
-            index = 0;
+    remapEnemScene3(units) {
+        this.clear();
+        for(var i = 0; i < units.length; i++) {
+            this.unit = units[i];
+            this.addMenuItem(this.unit.type + "\nHP: " + this.unit.hp);
         }
-        this.menuItems[this.menuItemIndex].deselect();
-        this.menuItemIndex = index;
-        this.menuItems[this.menuItemIndex].select();
     }
 
     confirm() {
         this.scene.events.emit("Enemy", this.menuItemIndex);
-}
+    }
 }
